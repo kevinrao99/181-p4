@@ -12,9 +12,13 @@ class Learner(object):
     '''
 
     def __init__(self):
+        # treetop 30, monkeytop 40, treedist 40, vel 70, gravity 4, action 2
+        self.matrix = [[[[[[[0] for i in range(2)] for j in range(4)] for k in range(70)] for l in range(40)] for m in range(40)] for n in range(30)]
         self.last_state  = None
         self.last_action = None
         self.last_reward = None
+        self.lr = 0.1
+        self.eps = 0.1
 
     def reset(self):
         self.last_state  = None
@@ -32,7 +36,26 @@ class Learner(object):
         # You'll need to select and action and return it.
         # Return 0 to swing and 1 to jump.
 
-        new_action = npr.rand() < 0.1
+        treetop = state['tree']['top'] // 10
+        monkeytop = state['monkey']['top'] // 10
+        treedist = state['tree']['dist'] // 10
+        vel = state['monkey']['vel']
+        gravity = 2
+
+        old_treetop = self.last_state['tree']['top'] // 10
+        old_monkeytop = self.last_state['monkey']['top'] // 10
+        old_treedist = self.last_state['tree']['dist'] // 10
+        old_vel = self.last_state['monkey']['vel']
+
+        mymax = max(self.matrix[treetop][monkeytop][treedist][vel][gravity][0], self.matrix[treetop][monkeytop][treedist][vel][gravity][1])
+
+        self.matrix[old_treetop][old_monkeytop][old_treedist][old_vel][gravity][int(self.last_action)] *= (1 - self.lr)
+        self.matrix[old_treetop][old_monkeytop][old_treedist][old_vel][gravity][int(self.last_action)] += self.lr * (self.last_reward + mymax)
+
+        if math.random() > self.eps:
+            new_action = self.matrix[treetop][monkeytop][treedist][vel][gravity][0] < self.matrix[treetop][monkeytop][treedist][vel][gravity][1]
+        else:
+            new_action = math.random() > 0.5
         new_state  = state
 
         self.last_action = new_action
