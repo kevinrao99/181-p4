@@ -55,7 +55,7 @@ class Learner(object):
         if math.random() > self.eps:
             new_action = self.matrix[treetop][monkeytop][treedist][vel][gravity][0] < self.matrix[treetop][monkeytop][treedist][vel][gravity][1]
         else:
-            new_action = math.random() > 0.5
+            new_action = math.random() > 0.8
         new_state  = state
 
         self.last_action = new_action
