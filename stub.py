@@ -13,18 +13,19 @@ class Learner(object):
     '''
 
     def __init__(self):
-        # treetop 30, monkeytop 40, treedist 40, vel 70, self.gravity 4, action 2
+        # treetop 30, monkeytop 40, vel 70, self.gravity 4, action 2
         print "instantiating stuff..."
-        self.matrix = [[[[[[0 for i in range(2)] for j in range(2)] for k in range(70)] for l in range(60)] for m in range(42)] for n in range(42)]
+        self.matrix = [[[[[0 for i in range(2)] for j in range(2)] for k in range(70)] for m in range(42)] for n in range(42)]
         print "done with matrix"
         self.last_state  = None
         self.last_action = None
         self.last_reward = None
         self.checkedyet = False
-        self.lr = 0.4
-        self.eps = 0.3
-        self.treetopscale, self.monkeytopscale, self.treedistscale, self.velscale = 30*2, 40*2, 40*2, 7*2
+        self.lr = 0.6
+        self.eps = 0.5
+        self.treetopscale, self.monkeytopscale, self.velscale = 30*2, 40*2, 7
         self.gravity = 0
+        self.discount = 1
 
     def reset(self):
         self.last_state  = None
@@ -32,6 +33,7 @@ class Learner(object):
         self.last_reward = None
         self.gravity = 0
         self.checkedyet = False
+        self.eps *= 0.95
 
     def action_callback(self, state):
         '''
@@ -46,42 +48,41 @@ class Learner(object):
 
         treetop = state['tree']['top'] // self.treetopscale
         monkeytop = state['monkey']['top'] // self.monkeytopscale
-        treedist = state['tree']['dist'] // self.treedistscale
         vel = state['monkey']['vel'] // self.velscale
-        a = self.matrix[treetop]
-        a = a[monkeytop]
-        a = a[treedist]
-        a = a[vel]
+
+        print monkeytop
+        curr = self.matrix[treetop][monkeytop][vel][self.gravity]
+        mymax = max(curr[0], curr[1])
 
         if self.last_state:
             old_treetop = self.last_state['tree']['top'] // self.treetopscale
             old_monkeytop = self.last_state['monkey']['top'] // self.monkeytopscale
-            old_treedist = self.last_state['tree']['dist'] // self.treedistscale
             old_vel = self.last_state['monkey']['vel'] // self.velscale
             if old_vel > vel and not self.checkedyet:
                 self.gravity = 1 if old_vel - vel - 1 != 0 else 0
                 self.checkedyet = True
 
-            mymax = max(self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0], self.matrix[treetop][monkeytop][treedist][vel][self.gravity][1])
-            self.matrix[old_treetop][old_monkeytop][old_treedist][old_vel][self.gravity][int(self.last_action)] -= self.lr * (self.matrix[old_treetop][old_monkeytop][old_treedist][old_vel][self.gravity][int(self.last_action)] - self.last_reward - mymax)
+            
+            last = self.matrix[old_treetop][old_monkeytop][old_vel][self.gravity]
+            df = last[self.last_action] - (self.last_reward + self.discount * mymax)
+            self.matrix[old_treetop][old_monkeytop][old_vel][self.gravity][self.last_action] -= self.lr * df
 
         if random.random() > self.eps:
-            new_action = self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] < self.matrix[treetop][monkeytop][treedist][vel][self.gravity][1]
+            new_action = int(curr[0] < curr[1])
         else:
-            new_action = random.random() > 0.5
+            new_action = int(random.random() > 0.8)
         
         new_state  = state
 
         self.last_action = new_action
         self.last_state  = new_state
 
-        return self.last_action
+        return new_action
 
     def reward_callback(self, reward):
         '''This gets called so you can see what reward you get.'''
 
         self.last_reward = reward
-        print reward
 
 
 def run_games(learner, hist, iters = 100, t_len = 100):
@@ -105,7 +106,6 @@ def run_games(learner, hist, iters = 100, t_len = 100):
         hist.append(swing.score)
 
         # Reset the state of the learner.
-        print "gravity: ", learner.gravity
         learner.reset()
         
     pg.quit()
@@ -113,15 +113,13 @@ def run_games(learner, hist, iters = 100, t_len = 100):
 
 
 if __name__ == '__main__':
-    print "before"
     # Select agent.
     agent = Learner()
-    print "after"
 	# Empty list to save history.
     hist = []
 
     # Run games. 
-    run_games(agent, hist, 100, 10)
+    run_games(agent, hist, 100, 1)
 
     print hist
 
