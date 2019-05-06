@@ -23,7 +23,7 @@ class Learner(object):
         self.checkedyet = False
         self.lr = 0.6
         self.eps = 0.5
-        self.treetopscale, self.monkeytopscale, self.velscale = 30*2, 40*2, 7
+        self.treetopscale, self.monkeytopscale, self.velscale = 45, 60, 7
         self.gravity = 0
         self.discount = 1
 
