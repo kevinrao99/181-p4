@@ -158,8 +158,6 @@ class SwingyMonkey:
         monkey_top = self.monkey_loc - self.monkey_img.get_height()/2
         monkey_bot = self.monkey_loc + self.monkey_img.get_height()/2
 
-        print monkey_bot - monkey_top
-
         # Move trees to the left, render and compute collision.
         self.next_tree -= self.horz_speed
         edge_hit = False

@@ -22,8 +22,8 @@ class Learner(object):
         self.last_action = None
         self.last_reward = None
         self.checkedyet = False
-        self.lr = 0.2
-        self.eps = 0.5
+        self.lr = 0.8
+        self.eps = 0.1
         self.treetopscale, self.monkeytopscale, self.treedistscale, self.velscale = 30*1, 40*1, 40*1, 4*1
         self.gravity = 0
         self.discount = 1
@@ -33,9 +33,9 @@ class Learner(object):
         self.last_action = None
         self.last_reward = None
         self.gravity = 0
-        self.eps = 0.5
+        self.lr = 0.8
+        self.eps = 0.1
         self.checkedyet = False
-        self.eps *= 0.95
 
     def action_callback(self, state):
         '''
@@ -48,13 +48,15 @@ class Learner(object):
         # You'll need to select and action and return it.
         # Return 0 to swing and 1 to jump.
 
-        self.eps *= 0.99
+        if self.eps > 0.001:
+            self.eps *= 0.9
+        if self.lr > 0.1:
+            self.lr *= 0.99
 
         treetop = state['tree']['top'] // self.treetopscale
         monkeytop = state['monkey']['top'] // self.monkeytopscale
         vel = state['monkey']['vel'] // self.velscale
 
-        print monkeytop
         curr = self.matrix[treetop][monkeytop][vel][self.gravity]
         mymax = max(curr[0], curr[1])
 
@@ -71,11 +73,12 @@ class Learner(object):
             self.matrix[old_treetop][old_monkeytop][old_vel][self.gravity][self.last_action] -= self.lr * df
 
         if state['monkey']['top'] > state['tree']['top']:
-            self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] += 0.5
-        elif state['monkey']['bottom'] < state['tree']['bottom']:
-            self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] += 0.5
+            self.matrix[treetop][monkeytop][vel][self.gravity][0] += 0.5
+        elif state['monkey']['bot'] < state['tree']['bot']:
+            self.matrix[treetop][monkeytop][vel][self.gravity][1] += 0.5
 
-            
+
+
         if random.random() > self.eps:
             new_action = int(curr[0] < curr[1])
         else:
@@ -115,8 +118,6 @@ def run_games(learner, hist, iters = 100, t_len = 100):
         # Save score history.
         hist.append(swing.score)
 
-        print swing.score
-
         # Reset the state of the learner.
         learner.reset()
         
@@ -125,22 +126,14 @@ def run_games(learner, hist, iters = 100, t_len = 100):
 
 
 if __name__ == '__main__':
-<<<<<<< HEAD
-
     print "before"
-=======
->>>>>>> 7915fc100bddaefbe282e5b31aaa60280430a84e
     # Select agent.
     agent = Learner()
 	# Empty list to save history.
     hist = []
 
     # Run games. 
-<<<<<<< HEAD
-    run_games(agent, hist, 2000, 1)
-=======
-    run_games(agent, hist, 100, 1)
->>>>>>> 7915fc100bddaefbe282e5b31aaa60280430a84e
+    run_games(agent, hist, 200, 1)
 
     print hist
 
@@ -148,6 +141,9 @@ if __name__ == '__main__':
     np.save('hist',np.array(hist))
 
     plt.scatter(range(len(hist)), hist)
+    plt.xlabel("Epoch number")
+    plt.title("Score vs. Epochs")
+    plt.ylabel("Score")
     plt.show()
 
 
