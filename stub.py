@@ -3,6 +3,7 @@ import numpy as np
 import numpy.random as npr
 import pygame as pg
 import random
+import matplotlib.pyplot as plt
 
 from SwingyMonkey import SwingyMonkey
 
@@ -21,9 +22,9 @@ class Learner(object):
         self.last_action = None
         self.last_reward = None
         self.checkedyet = False
-        self.lr = 0.6
+        self.lr = 0.2
         self.eps = 0.5
-        self.treetopscale, self.monkeytopscale, self.velscale = 45, 60, 7
+        self.treetopscale, self.monkeytopscale, self.treedistscale, self.velscale = 30*1, 40*1, 40*1, 4*1
         self.gravity = 0
         self.discount = 1
 
@@ -32,6 +33,7 @@ class Learner(object):
         self.last_action = None
         self.last_reward = None
         self.gravity = 0
+        self.eps = 0.5
         self.checkedyet = False
         self.eps *= 0.95
 
@@ -45,6 +47,8 @@ class Learner(object):
 
         # You'll need to select and action and return it.
         # Return 0 to swing and 1 to jump.
+
+        self.eps *= 0.99
 
         treetop = state['tree']['top'] // self.treetopscale
         monkeytop = state['monkey']['top'] // self.monkeytopscale
@@ -62,11 +66,16 @@ class Learner(object):
                 self.gravity = 1 if old_vel - vel - 1 != 0 else 0
                 self.checkedyet = True
 
-            
             last = self.matrix[old_treetop][old_monkeytop][old_vel][self.gravity]
             df = last[self.last_action] - (self.last_reward + self.discount * mymax)
             self.matrix[old_treetop][old_monkeytop][old_vel][self.gravity][self.last_action] -= self.lr * df
 
+        if state['monkey']['top'] > state['tree']['top']:
+            self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] += 0.5
+        elif state['monkey']['bottom'] < state['tree']['bottom']:
+            self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] += 0.5
+
+            
         if random.random() > self.eps:
             new_action = int(curr[0] < curr[1])
         else:
@@ -77,6 +86,7 @@ class Learner(object):
         self.last_action = new_action
         self.last_state  = new_state
 
+        # print "Action:", new_action
         return new_action
 
     def reward_callback(self, reward):
@@ -105,6 +115,8 @@ def run_games(learner, hist, iters = 100, t_len = 100):
         # Save score history.
         hist.append(swing.score)
 
+        print swing.score
+
         # Reset the state of the learner.
         learner.reset()
         
@@ -113,17 +125,29 @@ def run_games(learner, hist, iters = 100, t_len = 100):
 
 
 if __name__ == '__main__':
+<<<<<<< HEAD
+
+    print "before"
+=======
+>>>>>>> 7915fc100bddaefbe282e5b31aaa60280430a84e
     # Select agent.
     agent = Learner()
 	# Empty list to save history.
     hist = []
 
     # Run games. 
+<<<<<<< HEAD
+    run_games(agent, hist, 2000, 1)
+=======
     run_games(agent, hist, 100, 1)
+>>>>>>> 7915fc100bddaefbe282e5b31aaa60280430a84e
 
     print hist
 
     # Save history. 
     np.save('hist',np.array(hist))
+
+    plt.scatter(range(len(hist)), hist)
+    plt.show()
 
 
