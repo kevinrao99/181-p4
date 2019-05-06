@@ -14,9 +14,9 @@ class Learner(object):
     '''
 
     def __init__(self):
-        # treetop 30, monkeytop 40, treedist 40, vel 70, self.gravity 4, action 2
+        # treetop 30, monkeytop 40, vel 70, self.gravity 4, action 2
         print "instantiating stuff..."
-        self.matrix = [[[[[[0 for i in range(2)] for j in range(2)] for k in range(70)] for l in range(60)] for m in range(42)] for n in range(42)]
+        self.matrix = [[[[[0 for i in range(2)] for j in range(2)] for k in range(70)] for m in range(42)] for n in range(42)]
         print "done with matrix"
         self.last_state  = None
         self.last_action = None
@@ -26,6 +26,7 @@ class Learner(object):
         self.eps = 0.5
         self.treetopscale, self.monkeytopscale, self.treedistscale, self.velscale = 30*1, 40*1, 40*1, 4*1
         self.gravity = 0
+        self.discount = 1
 
     def reset(self):
         self.last_state  = None
@@ -34,6 +35,7 @@ class Learner(object):
         self.gravity = 0
         self.eps = 0.5
         self.checkedyet = False
+        self.eps *= 0.95
 
     def action_callback(self, state):
         '''
@@ -50,36 +52,34 @@ class Learner(object):
 
         treetop = state['tree']['top'] // self.treetopscale
         monkeytop = state['monkey']['top'] // self.monkeytopscale
-        treedist = state['tree']['dist'] // self.treedistscale
         vel = state['monkey']['vel'] // self.velscale
-        a = self.matrix[treetop]
-        a = a[monkeytop]
-        a = a[treedist]
-        a = a[vel]
+
+        print monkeytop
+        curr = self.matrix[treetop][monkeytop][vel][self.gravity]
+        mymax = max(curr[0], curr[1])
 
         if self.last_state:
             old_treetop = self.last_state['tree']['top'] // self.treetopscale
             old_monkeytop = self.last_state['monkey']['top'] // self.monkeytopscale
-            old_treedist = self.last_state['tree']['dist'] // self.treedistscale
             old_vel = self.last_state['monkey']['vel'] // self.velscale
             if old_vel > vel and not self.checkedyet:
                 self.gravity = 1 if old_vel - vel - 1 != 0 else 0
                 self.checkedyet = True
 
-            mymax = max(self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0], self.matrix[treetop][monkeytop][treedist][vel][self.gravity][1])
-            # print "diff Q:", abs(self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] - self.matrix[treetop][monkeytop][treedist][vel][self.gravity][1])
-            self.matrix[old_treetop][old_monkeytop][old_treedist][old_vel][self.gravity][int(self.last_action)] -= (self.lr * (self.matrix[old_treetop][old_monkeytop][old_treedist][old_vel][self.gravity][int(self.last_action)] - self.last_reward - mymax))
+            last = self.matrix[old_treetop][old_monkeytop][old_vel][self.gravity]
+            df = last[self.last_action] - (self.last_reward + self.discount * mymax)
+            self.matrix[old_treetop][old_monkeytop][old_vel][self.gravity][self.last_action] -= self.lr * df
 
         if state['monkey']['top'] > state['tree']['top']:
             self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] += 0.5
         elif state['monkey']['bottom'] < state['tree']['bottom']:
-            new_action = self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] += 0.5
+            self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] += 0.5
 
-
+            
         if random.random() > self.eps:
-            new_action = self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] < self.matrix[treetop][monkeytop][treedist][vel][self.gravity][1]
+            new_action = int(curr[0] < curr[1])
         else:
-            new_action = (random.random() > 0.85)
+            new_action = int(random.random() > 0.8)
         
         new_state  = state
 
@@ -125,16 +125,22 @@ def run_games(learner, hist, iters = 100, t_len = 100):
 
 
 if __name__ == '__main__':
+<<<<<<< HEAD
 
     print "before"
+=======
+>>>>>>> 7915fc100bddaefbe282e5b31aaa60280430a84e
     # Select agent.
     agent = Learner()
-    print "after"
 	# Empty list to save history.
     hist = []
 
     # Run games. 
+<<<<<<< HEAD
     run_games(agent, hist, 2000, 1)
+=======
+    run_games(agent, hist, 100, 1)
+>>>>>>> 7915fc100bddaefbe282e5b31aaa60280430a84e
 
     print hist
 
