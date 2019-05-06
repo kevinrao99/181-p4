@@ -3,6 +3,7 @@ import numpy as np
 import numpy.random as npr
 import pygame as pg
 import random
+import matplotlib.pyplot as plt
 
 from SwingyMonkey import SwingyMonkey
 
@@ -69,17 +70,23 @@ class Learner(object):
             # print "diff Q:", abs(self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] - self.matrix[treetop][monkeytop][treedist][vel][self.gravity][1])
             self.matrix[old_treetop][old_monkeytop][old_treedist][old_vel][self.gravity][int(self.last_action)] -= (self.lr * (self.matrix[old_treetop][old_monkeytop][old_treedist][old_vel][self.gravity][int(self.last_action)] - self.last_reward - mymax))
 
+        if state['monkey']['top'] > state['tree']['top']:
+            self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] += 0.5
+        elif state['monkey']['bottom'] < state['tree']['bottom']:
+            new_action = self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] += 0.5
+
+
         if random.random() > self.eps:
             new_action = self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] < self.matrix[treetop][monkeytop][treedist][vel][self.gravity][1]
         else:
-            new_action = random.random() > 0.85
+            new_action = (random.random() > 0.85)
         
         new_state  = state
 
         self.last_action = new_action
         self.last_state  = new_state
 
-        print "Action:", new_action
+        # print "Action:", new_action
         return new_action
 
     def reward_callback(self, reward):
@@ -118,6 +125,7 @@ def run_games(learner, hist, iters = 100, t_len = 100):
 
 
 if __name__ == '__main__':
+
     print "before"
     # Select agent.
     agent = Learner()
@@ -126,11 +134,14 @@ if __name__ == '__main__':
     hist = []
 
     # Run games. 
-    run_games(agent, hist, 300, 1)
+    run_games(agent, hist, 2000, 1)
 
     print hist
 
     # Save history. 
     np.save('hist',np.array(hist))
+
+    plt.scatter(range(len(hist)), hist)
+    plt.show()
 
 
