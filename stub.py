@@ -21,9 +21,9 @@ class Learner(object):
         self.last_action = None
         self.last_reward = None
         self.checkedyet = False
-        self.lr = 0.4
-        self.eps = 0.3
-        self.treetopscale, self.monkeytopscale, self.treedistscale, self.velscale = 30*2, 40*2, 40*2, 7*2
+        self.lr = 0.2
+        self.eps = 0.5
+        self.treetopscale, self.monkeytopscale, self.treedistscale, self.velscale = 30*1, 40*1, 40*1, 4*1
         self.gravity = 0
 
     def reset(self):
@@ -31,6 +31,7 @@ class Learner(object):
         self.last_action = None
         self.last_reward = None
         self.gravity = 0
+        self.eps = 0.5
         self.checkedyet = False
 
     def action_callback(self, state):
@@ -43,6 +44,8 @@ class Learner(object):
 
         # You'll need to select and action and return it.
         # Return 0 to swing and 1 to jump.
+
+        self.eps *= 0.99
 
         treetop = state['tree']['top'] // self.treetopscale
         monkeytop = state['monkey']['top'] // self.monkeytopscale
@@ -63,25 +66,26 @@ class Learner(object):
                 self.checkedyet = True
 
             mymax = max(self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0], self.matrix[treetop][monkeytop][treedist][vel][self.gravity][1])
-            self.matrix[old_treetop][old_monkeytop][old_treedist][old_vel][self.gravity][int(self.last_action)] -= self.lr * (self.matrix[old_treetop][old_monkeytop][old_treedist][old_vel][self.gravity][int(self.last_action)] - self.last_reward - mymax)
+            # print "diff Q:", abs(self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] - self.matrix[treetop][monkeytop][treedist][vel][self.gravity][1])
+            self.matrix[old_treetop][old_monkeytop][old_treedist][old_vel][self.gravity][int(self.last_action)] -= (self.lr * (self.matrix[old_treetop][old_monkeytop][old_treedist][old_vel][self.gravity][int(self.last_action)] - self.last_reward - mymax))
 
         if random.random() > self.eps:
             new_action = self.matrix[treetop][monkeytop][treedist][vel][self.gravity][0] < self.matrix[treetop][monkeytop][treedist][vel][self.gravity][1]
         else:
-            new_action = random.random() > 0.5
+            new_action = random.random() > 0.85
         
         new_state  = state
 
         self.last_action = new_action
         self.last_state  = new_state
 
-        return self.last_action
+        print "Action:", new_action
+        return new_action
 
     def reward_callback(self, reward):
         '''This gets called so you can see what reward you get.'''
 
         self.last_reward = reward
-        print reward
 
 
 def run_games(learner, hist, iters = 100, t_len = 100):
@@ -104,8 +108,9 @@ def run_games(learner, hist, iters = 100, t_len = 100):
         # Save score history.
         hist.append(swing.score)
 
+        print swing.score
+
         # Reset the state of the learner.
-        print "gravity: ", learner.gravity
         learner.reset()
         
     pg.quit()
@@ -121,7 +126,7 @@ if __name__ == '__main__':
     hist = []
 
     # Run games. 
-    run_games(agent, hist, 100, 10)
+    run_games(agent, hist, 300, 1)
 
     print hist
 
