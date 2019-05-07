@@ -34,7 +34,6 @@ class Learner(object):
         self.last_reward = None
         self.gravity = 0
         self.checkedyet = False
-        self.eps *= 0.95
 
     def action_callback(self, state):
         '''
@@ -47,13 +46,15 @@ class Learner(object):
         # You'll need to select and action and return it.
         # Return 0 to swing and 1 to jump.
 
-        self.eps *= 0.99
+        if self.eps > 0.001:
+            self.eps *= 0.9
+        if self.lr > 0.1:
+            self.lr *= 0.99
 
         treetop = state['tree']['top'] // self.treetopscale
         monkeytop = state['monkey']['top'] // self.monkeytopscale
         vel = state['monkey']['vel'] // self.velscale
 
-        print monkeytop
         curr = self.matrix[treetop][monkeytop][vel][self.gravity]
         mymax = max(curr[0], curr[1])
 
@@ -72,9 +73,8 @@ class Learner(object):
         if state['monkey']['top'] > state['tree']['top']:
             self.matrix[treetop][monkeytop][vel][self.gravity][0] += 0.5
         elif state['monkey']['bot'] < state['tree']['bot']:
-            self.matrix[treetop][monkeytop][vel][self.gravity][0] -= 0.5
+            self.matrix[treetop][monkeytop][vel][self.gravity][1] += 0.5
 
-            
         if random.random() > self.eps:
             new_action = int(curr[0] < curr[1])
         else:
@@ -114,8 +114,6 @@ def run_games(learner, hist, iters = 100, t_len = 100):
         # Save score history.
         hist.append(swing.score)
 
-        print swing.score
-
         # Reset the state of the learner.
         learner.reset()
         
@@ -130,7 +128,7 @@ if __name__ == '__main__':
     hist = []
 
     # Run games. 
-    run_games(agent, hist, 100, 1)
+    run_games(agent, hist, 200, 1)
 
     print hist
 
@@ -138,4 +136,7 @@ if __name__ == '__main__':
     np.save('hist',np.array(hist))
 
     plt.scatter(range(len(hist)), hist)
-plt.show()
+    plt.xlabel("Epoch number")
+    plt.title("Score vs. Epochs")
+    plt.ylabel("Score")
+    plt.show()
